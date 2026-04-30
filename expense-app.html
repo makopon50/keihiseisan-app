@@ -1092,6 +1092,12 @@ function clearAll() {
   isDirty = false;
   addEmptyRow();
   renderRows();
+  // 店舗・作成者もクリア
+  document.getElementById('expenseAuthor').value = '';
+  document.getElementById('locationSelect').value = '';
+  currentLocation = '';
+  _lastLoadKey = '';
+  setTimeout(() => document.getElementById('locationSelect').focus(), 100);
 }
 
 function calcTotal() {
@@ -1108,6 +1114,30 @@ function saveExpenseEntry() {
   if(!author) { alert('作成者を入力してください'); return; }
 
   const dataRows = rows.filter(r => r.name || r.date || r.amount);
+  const docId = currentLocation + '_' + month + '_' + author;
+
+  // すべて空の場合はデータを削除
+  if(dataRows.length === 0) {
+    if(!confirm('データが空です。保存済みのデータを削除しますか？')) return;
+    db.collection('expenses').doc(docId).delete().then(() => {
+      showToast('データを削除しました');
+      entries = entries.filter(e => !(e.location===currentLocation && e.date.startsWith(month) && e.author===author));
+      isDirty = false;
+      rows = [];
+      rowId = 0;
+      addEmptyRow();
+      renderRows();
+      document.getElementById('expenseAuthor').value = '';
+      document.getElementById('locationSelect').value = '';
+      currentLocation = '';
+      _lastLoadKey = '';
+      setTimeout(() => document.getElementById('locationSelect').focus(), 100);
+    }).catch(err => {
+      console.error('Firestore削除エラー:', err);
+      showToast('データ削除に失敗しました');
+    });
+    return;
+  }
 
   // この月・拠点のデータをクリアして再保存
   entries = entries.filter(e => !(e.location===currentLocation && e.date.startsWith(month) && e.author===author));
@@ -1118,7 +1148,6 @@ function saveExpenseEntry() {
   isDirty = false;
 
   // Firestoreにも保存（作成者別）
-  const docId = currentLocation + '_' + month + '_' + author;
   const saveData = dataRows.map(r => ({
     date: r.date, dateDisplay: r.dateDisplay||'', name: r.name,
     account: r.account||'未分類', amount: parseInt(r.amount)||0, author: author
