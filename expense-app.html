@@ -1092,12 +1092,6 @@ function clearAll() {
   isDirty = false;
   addEmptyRow();
   renderRows();
-  // 店舗・作成者もクリア
-  document.getElementById('expenseAuthor').value = '';
-  document.getElementById('locationSelect').value = '';
-  currentLocation = '';
-  _lastLoadKey = '';
-  setTimeout(() => document.getElementById('locationSelect').focus(), 100);
 }
 
 function calcTotal() {
